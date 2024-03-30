@@ -6,5 +6,5 @@ Features:
 
 - Make animals and insects not require feeding to stay alive in the inventory.
 
-- Disable the option to murder animals and insect in the inventory.
+- Disable the option to murder animals and insects in the inventory.
 

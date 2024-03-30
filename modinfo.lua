@@ -1,5 +1,5 @@
 name = "Infinite Stacks"
-description = "Increase stack size of all stackable items."
+description = "Increase the stack size of all stackable items."
 author = "Tony"
 version = "240330"
 forumthread = ""
