@@ -22,13 +22,13 @@ Disable the option to murder animals and insects in the inventory.
 
 <b>Large Stacks</b>: Increase maximum stack size for large items that stack to 10 by default.
 
-<b><Animals> Never Die</b>: Remove the requirement to feed certain animals to keep them alive.
+<b>[Animals] Never Die</b>: Remove the requirement to feed certain animals to keep them alive.
 
-<b>Can't Murder <Animals></b>: Remove the murder action for certain animals.
+<b>Can't Murder [Animals]</b>: Remove the murder action for certain animals.
 
-<b>Stackable <Animals></b>:  Allow certain animals to be stacked.
+<b>Stackable [Animals]</b>:  Allow certain animals to be stacked.
 
-<b><Food> Doesn't Perish</b>: Disable perishing of certain foods.
+<b>[Food] Doesn't Perish</b>: Disable perishing of certain foods.
 
 <h1>Notes</h1>
 
