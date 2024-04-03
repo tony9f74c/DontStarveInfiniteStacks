@@ -1,7 +1,7 @@
 name = "Infinite Stacks"
 description = "Increase the stack size of all stackable items."
 author = "Tony"
-version = "240330"
+version = "240403"
 forumthread = ""
 api_version = 10
 all_clients_require_mod = true
@@ -35,17 +35,17 @@ end
 
 local stacks = {} for k=1,20,1 do stacks[k] = setCount(k*5) end
     for k=1,18,1 do local m = k+20 stacks[m] = setCount(k*50+100) end
-    stacks[#stacks] = {description = "Infinite", data = 99999}
+    stacks[#stacks] = {description = "Infinite", data = 65536}
 
 local dontDieList = {"Bees", "Butterflies", "Rabbits", "Birds", "Moles", "Mosquitos"}
 local removeMurderlist = dontDieList
 local canStackList = {"Rabbits", "Birds", "Moles"}
 
 local options = {
-    {name = "cfgChangeTinyStacksSize", label = "Tiny Items Stack", options = stacks, default = 100, hover = "Change the stack size of tiny items which normally stack to 60."},
-    {name = "cfgChangeSmallStacksSize", label = "Small Items Stack", options = stacks, default = 100, hover = "Change the stack size of small items which normally stack to 40."},
-    {name = "cfgChangeMediumStacksSize", label = "Medium Items Stack", options = stacks, default = 100, hover = "Change the stack size of medium items which normally stack to 20."},
-    {name = "cfgChangeLargeStacksSize", label = "Large Items Stack", options = stacks, default = 100, hover = "Change the stack size of large items which normally stack to 10."},
+    {name = "cfgChangeTinyStacksSize", label = "Tiny Items Stack", options = stacks, default = 950, hover = "Change the stack size of tiny items which normally stack to 60."},
+    {name = "cfgChangeSmallStacksSize", label = "Small Items Stack", options = stacks, default = 950, hover = "Change the stack size of small items which normally stack to 40."},
+    {name = "cfgChangeMediumStacksSize", label = "Medium Items Stack", options = stacks, default = 950, hover = "Change the stack size of medium items which normally stack to 20."},
+    {name = "cfgChangeLargeStacksSize", label = "Large Items Stack", options = stacks, default = 950, hover = "Change the stack size of large items which normally stack to 10."},
     {name = "cfgChangeMaxWortoxSouls", label = "Max Wortox Souls", options = stacks, default = 20, hover = "Change the maximum number of Souls that Wortox is allowed to pick up."}
 }
 

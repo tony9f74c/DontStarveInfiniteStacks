@@ -8,6 +8,47 @@ TUNING.STACK_SIZE_SMALLITEM = GetModConfigData("cfgChangeSmallStacksSize");
 TUNING.STACK_SIZE_TINYITEM = GetModConfigData("cfgChangeTinyStacksSize");
 TUNING.WORTOX_MAX_SOULS = GetModConfigData("cfgChangeMaxWortoxSouls");
 
+-- Update stackable_replica
+local function OnStackSizeDirty(inst)
+    local self = inst.replica.stackable
+    if not self then return end -- Stackable removed
+    self:ClearPreviewStackSize()
+    inst:PushEvent("inventoryitem_stacksizedirty")
+end
+local stackable_replica = GLOBAL.require("components/stackable_replica")
+stackable_replica._ctor = function(self, inst)
+    self.inst = inst
+    self._stacksize = GLOBAL.net_byte(inst.GUID, "stackable._stacksize", "stacksizedirty")
+    self._stacksizeupper = GLOBAL.net_byte(inst.GUID, "stackable._stacksizeupper", "stacksizedirty")
+    self._ignoremaxsize = GLOBAL.net_bool(inst.GUID, "stackable._ignoremaxsize")
+    self._maxsize = GLOBAL.net_ushortint(inst.GUID, "stackable._maxsize")
+
+    if not GLOBAL.TheWorld.ismastersim then
+        inst:ListenForEvent("stacksizedirty", OnStackSizeDirty)
+    end
+end
+stackable_replica.SetStackSize = function(self, stacksize)
+    stacksize = stacksize - 1
+    if stacksize <= 255 then
+        self._stacksizeupper:set(0)
+        self._stacksize:set(stacksize)
+    elseif stacksize >= 65535 then
+        if self._stacksizeupper:value() ~= 255 then
+            self._stacksizeupper:set(255)
+        else
+            self._stacksize:set_local(255) -- Force sync to trigger UI events even when capped
+        end
+        self._stacksize:set(255)
+    else
+        local upper = math.floor(stacksize / 256)
+        self._stacksizeupper:set(upper)
+        self._stacksize:set(stacksize - upper * 256)
+    end
+end
+stackable_replica.StackSize = function(self)
+    return self:GetPreviewStackSize() or (self._stacksizeupper:value() * 256 + self._stacksize:value() + 1)
+end
+
 -- Make stackable
 local function makeStackable(inst)
     if not inst.components.stackable and GLOBAL.TheWorld.ismastersim then
