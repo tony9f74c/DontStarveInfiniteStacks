@@ -49,6 +49,29 @@ stackable_replica.StackSize = function(self)
     return self:GetPreviewStackSize() or (self._stacksizeupper:value() * 256 + self._stacksize:value() + 1)
 end
 
+-- Update itemtile
+local Text = require "widgets/text"
+local itemtile = GLOBAL.require("widgets/itemtile")
+itemtile.SetQuantity = function(self, quantity)
+    if self.onquantitychangedfn ~= nil and self:onquantitychangedfn(quantity) then
+        if self.quantity ~= nil then
+            self.quantity = self.quantity:Kill()
+        end
+        return
+    elseif not self.quantity then
+        self.quantity = self:AddChild(Text("stint-ucr", 42))
+    end
+    if quantity > 999 then
+        self.quantity:SetSize(36)
+        self.quantity:SetPosition(3.5, 16, 0)
+        self.quantity:SetString(tostring(quantity))
+    else
+        self.quantity:SetSize(42)
+        self.quantity:SetPosition(2, 16, 0)
+        self.quantity:SetString(tostring(quantity))
+    end
+end
+
 -- Make stackable
 local function makeStackable(inst)
     if not inst.components.stackable and GLOBAL.TheWorld.ismastersim then
