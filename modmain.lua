@@ -8,70 +8,6 @@ TUNING.STACK_SIZE_SMALLITEM = GetModConfigData("cfgChangeSmallStacksSize");
 TUNING.STACK_SIZE_TINYITEM = GetModConfigData("cfgChangeTinyStacksSize");
 TUNING.WORTOX_MAX_SOULS = GetModConfigData("cfgChangeMaxWortoxSouls");
 
--- Update stackable_replica
-local function OnStackSizeDirty(inst)
-    local self = inst.replica.stackable
-    if not self then return end -- Stackable removed
-    self:ClearPreviewStackSize()
-    inst:PushEvent("inventoryitem_stacksizedirty")
-end
-local stackable_replica = GLOBAL.require("components/stackable_replica")
-stackable_replica._ctor = function(self, inst)
-    self.inst = inst
-    self._stacksize = GLOBAL.net_byte(inst.GUID, "stackable._stacksize", "stacksizedirty")
-    self._stacksizeupper = GLOBAL.net_byte(inst.GUID, "stackable._stacksizeupper", "stacksizedirty")
-    self._ignoremaxsize = GLOBAL.net_bool(inst.GUID, "stackable._ignoremaxsize")
-    self._maxsize = GLOBAL.net_ushortint(inst.GUID, "stackable._maxsize")
-
-    if not GLOBAL.TheWorld.ismastersim then
-        inst:ListenForEvent("stacksizedirty", OnStackSizeDirty)
-    end
-end
-stackable_replica.SetStackSize = function(self, stacksize)
-    stacksize = stacksize - 1
-    if stacksize <= 255 then
-        self._stacksizeupper:set(0)
-        self._stacksize:set(stacksize)
-    elseif stacksize >= 65535 then
-        if self._stacksizeupper:value() ~= 255 then
-            self._stacksizeupper:set(255)
-        else
-            self._stacksize:set_local(255) -- Force sync to trigger UI events even when capped
-        end
-        self._stacksize:set(255)
-    else
-        local upper = math.floor(stacksize / 256)
-        self._stacksizeupper:set(upper)
-        self._stacksize:set(stacksize - upper * 256)
-    end
-end
-stackable_replica.StackSize = function(self)
-    return self:GetPreviewStackSize() or (self._stacksizeupper:value() * 256 + self._stacksize:value() + 1)
-end
-
--- Update itemtile
-local Text = require "widgets/text"
-local itemtile = GLOBAL.require("widgets/itemtile")
-itemtile.SetQuantity = function(self, quantity)
-    if self.onquantitychangedfn ~= nil and self:onquantitychangedfn(quantity) then
-        if self.quantity ~= nil then
-            self.quantity = self.quantity:Kill()
-        end
-        return
-    elseif not self.quantity then
-        self.quantity = self:AddChild(Text("stint-ucr", 42))
-    end
-    if quantity > 999 then
-        self.quantity:SetSize(36)
-        self.quantity:SetPosition(3.5, 16, 0)
-        self.quantity:SetString(tostring(quantity))
-    else
-        self.quantity:SetSize(42)
-        self.quantity:SetPosition(2, 16, 0)
-        self.quantity:SetString(tostring(quantity))
-    end
-end
-
 -- Make stackable
 local function makeStackable(inst)
     if not inst.components.stackable and GLOBAL.TheWorld.ismastersim then
@@ -199,4 +135,168 @@ if GetModConfigData("cfgVegSeedsDontPerish") then
     AddPrefabPostInit("potato_seeds", removePerish)
     AddPrefabPostInit("tomato_seeds", removePerish)
     AddPrefabPostInit("asparagus_seeds", removePerish)
+end
+
+-- Make armor/tools stackable
+local finiteuses = GLOBAL.require("components/finiteuses")
+finiteuses.Dilute = function(self, current, total)
+    if self.inst.components.stackable then
+        self.inst.components.finiteuses.total = self.inst.components.finiteuses.total + total
+        self.inst.components.finiteuses.current = self.inst.components.finiteuses.current + current
+        self.inst:PushEvent("percentusedchange", {percent = self:GetPercent()})
+    end
+end
+local _src_pos = nil
+local stackable = GLOBAL.require("components/stackable")
+stackable.Put = function(self, item, source_pos)
+    GLOBAL.assert(item ~= self, "cant stack on self" )
+    local ret
+    if item.prefab == self.inst.prefab and item.skinname == self.inst.skinname then
+        local num_to_add = item.components.stackable.stacksize
+        local newtotal = self.stacksize + num_to_add
+        local oldsize = self.stacksize
+        local newsize = math.min(self.maxsize, newtotal)
+        local numberadded = newsize - oldsize
+        if self.inst.components.finiteuses ~= nil then
+            self.inst.components.finiteuses:Dilute(item.components.finiteuses.current, item.components.finiteuses.total)
+        end
+        if self.inst.components.perishable ~= nil then
+            self.inst.components.perishable:Dilute(numberadded, item.components.perishable.perishremainingtime)
+        end
+        if self.inst.components.inventoryitem ~= nil then
+            self.inst.components.inventoryitem:DiluteMoisture(item, numberadded)
+        end
+        if self.inst.components.edible ~= nil then
+            self.inst.components.edible:DiluteChill(item, numberadded)
+        end
+        if self.inst.components.curseditem ~= nil then
+            self.inst.skipspeech = true
+        end
+        if self.maxsize >= newtotal then
+            item:Remove()
+        else
+            _src_pos = source_pos
+            item.components.stackable.stacksize = newtotal - self.maxsize
+            _src_pos = nil
+            item:PushEvent("stacksizechange", {stacksize = item.components.stackable.stacksize, oldstacksize=num_to_add, src_pos = source_pos })
+            ret = item
+        end
+        _src_pos = source_pos
+        self.stacksize = math.min(newsize, 65536)
+        _src_pos = nil
+        self.inst:PushEvent("stacksizechange", {stacksize = self.stacksize, oldstacksize=oldsize, src_pos = source_pos})
+    end
+    return ret
+end
+finiteuses.SplitUses = function(self, uses_removed)
+    if self.inst.components.stackable then
+        print("SplitUses: self.inst.components.finiteuses.current = "..self.inst.components.finiteuses.current)
+        self.inst.components.finiteuses.total = self.inst.components.finiteuses.total - uses_removed
+        self.inst.components.finiteuses.current = self.inst.components.finiteuses.current - uses_removed
+        self.inst:PushEvent("percentusedchange", {percent = self:GetPercent()})
+    end
+end
+stackable.Get = function(self, num)
+    local num_to_get = num or 1
+    if self.stacksize > num_to_get then
+        local instance = GLOBAL.SpawnPrefab( self.inst.prefab, self.inst.skinname, self.inst.skin_id, nil )
+        self:SetStackSize(self.stacksize - num_to_get)
+        instance.components.stackable:SetStackSize(num_to_get)
+        if self.ondestack ~= nil then
+            self.ondestack(instance)
+        end
+        if self.inst.components.finiteuses ~= nil then
+            instance.components.finiteuses.total = instance.components.finiteuses.total * num_to_get
+            instance.components.finiteuses.current = instance.components.finiteuses.current * num_to_get
+            self.inst.components.finiteuses:SplitUses(instance.components.finiteuses.total)
+        end
+        if instance.components.perishable ~= nil then
+            instance.components.perishable.perishremainingtime = self.inst.components.perishable.perishremainingtime
+        end
+        if instance.components.curseditem ~= nil and self.inst.components.curseditem ~= nil then
+            self.inst.components.curseditem:CopyCursedFields(instance.components.curseditem)
+            if self.inst:HasTag("applied_curse") then
+                instance.skipspeech = true
+                instance:AddTag("applied_curse")
+            end
+        end
+        if instance.components.rechargeable ~= nil and self.inst.components.rechargeable ~= nil then
+            if not self.inst.components.rechargeable:IsCharged() then
+                instance.components.rechargeable:SetChargeTime(self.inst.components.rechargeable:GetChargeTime())
+                instance.components.rechargeable:SetCharge(self.inst.components.rechargeable:GetCharge())
+            end
+        end
+        if instance.components.inventoryitem ~= nil and self.inst.components.inventoryitem ~= nil then
+            if self.inst.components.inventoryitem.owner then
+                instance.components.inventoryitem:OnPutInInventory(self.inst.components.inventoryitem.owner)
+            end
+            instance.components.inventoryitem:InheritMoisture(self.inst.components.inventoryitem:GetMoisture(), self.inst.components.inventoryitem:IsWet())
+        end
+        return instance
+    end
+    return self.inst
+end
+
+-- Update stackable_replica
+local function OnStackSizeDirty(inst)
+    local self = inst.replica.stackable
+    if not self then return end -- Stackable removed
+    self:ClearPreviewStackSize()
+    inst:PushEvent("inventoryitem_stacksizedirty")
+end
+local stackable_replica = GLOBAL.require("components/stackable_replica")
+stackable_replica._ctor = function(self, inst)
+    self.inst = inst
+    self._stacksize = GLOBAL.net_byte(inst.GUID, "stackable._stacksize", "stacksizedirty")
+    self._stacksizeupper = GLOBAL.net_byte(inst.GUID, "stackable._stacksizeupper", "stacksizedirty")
+    self._ignoremaxsize = GLOBAL.net_bool(inst.GUID, "stackable._ignoremaxsize")
+    self._maxsize = GLOBAL.net_ushortint(inst.GUID, "stackable._maxsize")
+
+    if not GLOBAL.TheWorld.ismastersim then
+        inst:ListenForEvent("stacksizedirty", OnStackSizeDirty)
+    end
+end
+stackable_replica.SetStackSize = function(self, stacksize)
+    stacksize = stacksize - 1
+    if stacksize <= 255 then
+        self._stacksizeupper:set(0)
+        self._stacksize:set(stacksize)
+    elseif stacksize >= 65535 then
+        if self._stacksizeupper:value() ~= 255 then
+            self._stacksizeupper:set(255)
+        else
+            self._stacksize:set_local(255) -- Force sync to trigger UI events even when capped
+        end
+        self._stacksize:set(255)
+    else
+        local upper = math.floor(stacksize / 256)
+        self._stacksizeupper:set(upper)
+        self._stacksize:set(stacksize - upper * 256)
+    end
+end
+stackable_replica.StackSize = function(self)
+    return self:GetPreviewStackSize() or (self._stacksizeupper:value() * 256 + self._stacksize:value() + 1)
+end
+
+-- Update itemtile
+local Text = require "widgets/text"
+local itemtile = GLOBAL.require("widgets/itemtile")
+itemtile.SetQuantity = function(self, quantity)
+    if self.onquantitychangedfn ~= nil and self:onquantitychangedfn(quantity) then
+        if self.quantity ~= nil then
+            self.quantity = self.quantity:Kill()
+        end
+        return
+    elseif not self.quantity then
+        self.quantity = self:AddChild(Text("stint-ucr", 42))
+    end
+    if quantity > 999 then
+        self.quantity:SetSize(36)
+        self.quantity:SetPosition(3.5, 16, 0)
+        self.quantity:SetString(tostring(quantity))
+    else
+        self.quantity:SetSize(42)
+        self.quantity:SetPosition(2, 16, 0)
+        self.quantity:SetString(tostring(quantity))
+    end
 end
