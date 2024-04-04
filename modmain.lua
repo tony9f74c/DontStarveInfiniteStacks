@@ -139,6 +139,17 @@ end
 
 -- Make armor/tools stackable
 local finiteuses = GLOBAL.require("components/finiteuses")
+finiteuses.OnSave = function(self)
+    if self.current and self.total then
+        return { current = self.current, total = self.total }
+    end
+end
+finiteuses.OnLoad = function(self, data)
+    if data.current ~= nil and data.total ~= nil then
+        self:SetUses(data.current)
+        self:SetMaxUses(data.total)
+    end
+end
 finiteuses.Dilute = function(self, current, total)
     if self.inst.components.stackable then
         self.inst.components.finiteuses.total = self.inst.components.finiteuses.total + total
