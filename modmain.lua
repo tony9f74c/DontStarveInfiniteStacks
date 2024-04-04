@@ -139,6 +139,12 @@ end
 
 -- Make armor/tools stackable
 local finiteuses = GLOBAL.require("components/finiteuses")
+local finiteuses_ctor = finiteuses._ctor
+finiteuses._ctor = function(self, inst)
+    finiteuses_ctor(self, inst)
+    self.inst:AddComponent("stackable")
+    self.inst.components.stackable.maxsize = TUNING.STACK_SIZE_SMALLITEM
+end
 finiteuses.OnSave = function(self)
     if self.current and self.total then
         return { current = self.current, total = self.total }
