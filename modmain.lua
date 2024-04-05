@@ -173,7 +173,7 @@ finiteuses.SplitUses = function(self, uses_removed)
     end
 end
 
--- Update fueled component to make all items that can be reafueled stackable
+-- Update fueled component to make all fueled items stackable
 local fueled = GLOBAL.require("components/fueled")
 local fueled_ctor = fueled._ctor
 fueled._ctor = function(self, inst)
@@ -209,7 +209,43 @@ fueled.OnLoad = function(self, data)
     end
 end
 
--- Update stackable component to allow stacking items with finite uses and fueled items
+-- Update armor component to make all armor stackable
+local armor = GLOBAL.require("components/armor")
+local armor_ctor = armor._ctor
+armor._ctor = function(self, inst)
+    armor_ctor(self, inst)
+    self.inst:AddComponent("stackable")
+    self.inst.components.stackable.maxsize = TUNING.STACK_SIZE_LARGEITEM
+end
+
+-- Update armor component to allow stacking
+armor.Dilute = function(self, condition, maxcondition)
+    if self.inst.components.stackable then
+        self.inst.components.armor.maxcondition = self.inst.components.armor.maxcondition + maxcondition
+        self.inst.components.armor.condition = self.inst.components.armor.condition + condition
+        self.inst:PushEvent("percentusedchange", {percent = self:GetPercent()})
+    end
+end
+armor.SplitFuel = function(self, fuel_removed)
+    if self.inst.components.stackable then
+        self.inst.components.armor.maxcondition = self.inst.components.armor.maxcondition - fuel_removed
+        self.inst.components.armor.condition = self.inst.components.armor.condition - fuel_removed
+        self.inst:PushEvent("percentusedchange", {percent = self:GetPercent()})
+    end
+end
+armor.OnSave = function(self)
+    if self.condition and self.maxcondition then
+        return { condition = self.condition, maxcondition = self.maxcondition }
+    end
+end
+armor.OnLoad = function(self, data)
+    if data.condition ~= nil and data.maxcondition ~= nil then
+        self.maxcondition = data.maxcondition
+        self:SetCondition(data.condition)
+    end
+end
+
+-- Update stackable component to allow stacking of armor, items with finite uses and fueled items
 local _src_pos = nil
 local stackable = GLOBAL.require("components/stackable")
 stackable.Put = function(self, item, source_pos)
@@ -221,6 +257,9 @@ stackable.Put = function(self, item, source_pos)
         local oldsize = self.stacksize
         local newsize = math.min(self.maxsize, newtotal)
         local numberadded = newsize - oldsize
+        if self.inst.components.armor ~= nil then
+            self.inst.components.armor:Dilute(item.components.armor.condition, item.components.armor.maxcondition)
+        end
         if self.inst.components.fueled ~= nil then
             self.inst.components.fueled:Dilute(item.components.fueled.currentfuel, item.components.fueled.maxfuel)
         end
@@ -263,6 +302,11 @@ stackable.Get = function(self, num)
         instance.components.stackable:SetStackSize(num_to_get)
         if self.ondestack ~= nil then
             self.ondestack(instance)
+        end
+        if self.inst.components.armor ~= nil then
+            instance.components.armor.maxcondition = instance.components.armor.maxcondition * num_to_get
+            instance.components.armor.condition = instance.components.armor.condition * num_to_get
+            self.inst.components.armor:SplitFuel(instance.components.armor.maxcondition)
         end
         if self.inst.components.fueled ~= nil then
             instance.components.fueled.maxfuel = instance.components.fueled.maxfuel * num_to_get
