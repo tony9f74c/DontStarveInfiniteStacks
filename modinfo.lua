@@ -43,7 +43,7 @@ local stacks = {} for k=1,20,1 do stacks[k] = setCount(k*5) end
 
 local dontDieList = {"Bees", "Butterflies", "Rabbits", "Birds", "Moles", "Mosquitos"}
 local removeMurderlist = dontDieList
-local canStackList = {"Rabbits", "Birds", "Moles"}
+local canStackList = {"Armor", "Fueled", "FiniteUses", "Rabbits", "Birds", "Moles", "Fishes", "Spiders"}
 
 local options = {
     addDivider("Stacks", "Stacks"),
@@ -55,9 +55,6 @@ local options = {
 }
 
 options[#options+1] = addDivider("MakeStackable", "Make Stackable")
-options[#options+1] = canStack("Armor")
-options[#options+1] = canStack("Fueled")
-options[#options+1] = canStack("FiniteUses")
 for k=1, #canStackList, 1 do options[#options+1] = canStack(canStackList[k]) end
 options[#options+1] = addDivider("RemoveMurder", "Remove Murder Action")
 for k=1, #removeMurderlist, 1 do options[#options+1] = removeMurder(removeMurderlist[k]) end

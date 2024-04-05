@@ -22,6 +22,9 @@ end
 
 AddPrefabPostInit("minotaurhorn", makeStackable)
 AddPrefabPostInit("tallbirdegg", makeStackable)
+AddPrefabPostInit("eyeturret_item", makeStackable)
+AddPrefabPostInit("lavae_egg", makeStackable)
+
 if GetModConfigData("cfgRabbitsCanStackToggle") then
     AddPrefabPostInit("rabbit", makeStackable)
 end
@@ -30,9 +33,42 @@ if GetModConfigData("cfgBirdsCanStackToggle")then
     AddPrefabPostInit("robin", makeStackable)
     AddPrefabPostInit("robin_winter", makeStackable)
     AddPrefabPostInit("canary", makeStackable)
+    AddPrefabPostInit("puffin", makeStackable)
 end
 if GetModConfigData("cfgMolesCanStackToggle") then
     AddPrefabPostInit("mole", makeStackable)
+end
+if GetModConfigData("cfgFishesCanStackToggle") then
+    AddPrefabPostInit("pondfish", makeStackable)
+    AddPrefabPostInit("pondeel", makeStackable)
+    AddPrefabPostInit("oceanfish_small_1_inv", makeStackable)
+    AddPrefabPostInit("oceanfish_small_2_inv", makeStackable)
+    AddPrefabPostInit("oceanfish_small_3_inv", makeStackable)
+    AddPrefabPostInit("oceanfish_small_4_inv", makeStackable)
+    AddPrefabPostInit("oceanfish_small_5_inv", makeStackable)
+    AddPrefabPostInit("oceanfish_small_6_inv", makeStackable)
+    AddPrefabPostInit("oceanfish_small_7_inv", makeStackable)
+    AddPrefabPostInit("oceanfish_small_8_inv", makeStackable)
+    AddPrefabPostInit("oceanfish_small_9_inv", makeStackable)
+    AddPrefabPostInit("oceanfish_medium_1_inv", makeStackable)
+    AddPrefabPostInit("oceanfish_medium_2_inv", makeStackable)
+    AddPrefabPostInit("oceanfish_medium_3_inv", makeStackable)
+    AddPrefabPostInit("oceanfish_medium_4_inv", makeStackable)
+    AddPrefabPostInit("oceanfish_medium_5_inv", makeStackable)
+    AddPrefabPostInit("oceanfish_medium_6_inv", makeStackable)
+    AddPrefabPostInit("oceanfish_medium_7_inv", makeStackable)
+    AddPrefabPostInit("oceanfish_medium_8_inv", makeStackable)
+    AddPrefabPostInit("oceanfish_medium_9_inv", makeStackable)
+end
+if GetModConfigData("cfgSpidersCanStackToggle") then
+    AddPrefabPostInit("spider", makeStackable)
+    AddPrefabPostInit("spider_warrior", makeStackable)
+    AddPrefabPostInit("spider_hider", makeStackable)
+    AddPrefabPostInit("spider_spitter", makeStackable)
+    AddPrefabPostInit("spider_dropper", makeStackable)
+    AddPrefabPostInit("spider_moon", makeStackable)
+    AddPrefabPostInit("spider_healer", makeStackable)
+    AddPrefabPostInit("spider_water", makeStackable)
 end
 
 -- Remove feedable
@@ -65,6 +101,7 @@ if GetModConfigData("cfgBirdsDontDieToggle") then
     AddPrefabPostInit("robin", unmakeFeedable)
     AddPrefabPostInit("robin_winter", unmakeFeedable)
     AddPrefabPostInit("canary", unmakeFeedable)
+    AddPrefabPostInit("puffin", unmakeFeedable)
 end
 if GetModConfigData("cfgBeesDontDieToggle") then
     AddPrefabPostInit("bee", unmakeFeedable)
@@ -102,6 +139,7 @@ if GetModConfigData("cfgBirdsRemoveMurderToggle") then
     AddPrefabPostInit("robin", removeMurder)
     AddPrefabPostInit("robin_winter", removeMurder)
     AddPrefabPostInit("canary", removeMurder)
+    AddPrefabPostInit("puffin", removeMurder)
 end
 if GetModConfigData("cfgMosquitosRemoveMurderToggle") then
     AddPrefabPostInit("mosquito", removeMurder)
