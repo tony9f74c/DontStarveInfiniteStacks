@@ -137,13 +137,13 @@ if GetModConfigData("cfgVegSeedsDontPerish") then
     AddPrefabPostInit("asparagus_seeds", removePerish)
 end
 
--- Update finiteuses component to make all items with finite uses stackable to infinity
+-- Update finiteuses component to make all items with finite uses stackable
 local finiteuses = GLOBAL.require("components/finiteuses")
 local finiteuses_ctor = finiteuses._ctor
 finiteuses._ctor = function(self, inst)
     finiteuses_ctor(self, inst)
     self.inst:AddComponent("stackable")
-    self.inst.components.stackable.maxsize = TUNING.STACK_SIZE_SMALLITEM
+    self.inst.components.stackable.maxsize = TUNING.STACK_SIZE_LARGEITEM
 end
 
 -- Update finiteuses component to allow stacking
@@ -154,8 +154,8 @@ finiteuses.OnSave = function(self)
 end
 finiteuses.OnLoad = function(self, data)
     if data.current ~= nil and data.total ~= nil then
-        self:SetUses(data.current)
         self:SetMaxUses(data.total)
+        self:SetUses(data.current)
     end
 end
 finiteuses.Dilute = function(self, current, total)
@@ -165,8 +165,51 @@ finiteuses.Dilute = function(self, current, total)
         self.inst:PushEvent("percentusedchange", {percent = self:GetPercent()})
     end
 end
+finiteuses.SplitUses = function(self, uses_removed)
+    if self.inst.components.stackable then
+        self.inst.components.finiteuses.total = self.inst.components.finiteuses.total - uses_removed
+        self.inst.components.finiteuses.current = self.inst.components.finiteuses.current - uses_removed
+        self.inst:PushEvent("percentusedchange", {percent = self:GetPercent()})
+    end
+end
 
--- Update stackable component to allow stacking items with finite uses
+-- Update fueled component to make all items that can be reafueled stackable
+local fueled = GLOBAL.require("components/fueled")
+local fueled_ctor = fueled._ctor
+fueled._ctor = function(self, inst)
+    fueled_ctor(self, inst)
+    self.inst:AddComponent("stackable")
+    self.inst.components.stackable.maxsize = TUNING.STACK_SIZE_LARGEITEM
+end
+
+-- Update fueled component to allow stacking
+fueled.Dilute = function(self, currentfuel, maxfuel)
+    if self.inst.components.stackable then
+        self.inst.components.fueled.maxfuel = self.inst.components.fueled.maxfuel + maxfuel
+        self.inst.components.fueled.currentfuel = self.inst.components.fueled.currentfuel + currentfuel
+        self.inst:PushEvent("percentusedchange", {percent = self:GetPercent()})
+    end
+end
+fueled.SplitFuel = function(self, fuel_removed)
+    if self.inst.components.stackable then
+        self.inst.components.fueled.maxfuel = self.inst.components.fueled.maxfuel - fuel_removed
+        self.inst.components.fueled.currentfuel = self.inst.components.fueled.currentfuel - fuel_removed
+        self.inst:PushEvent("percentusedchange", {percent = self:GetPercent()})
+    end
+end
+fueled.OnSave = function(self)
+    if self.currentfuel and self.maxfuel then
+        return { currentfuel = self.currentfuel, maxfuel = self.maxfuel }
+    end
+end
+fueled.OnLoad = function(self, data)
+    if data.currentfuel ~= nil and data.maxfuel ~= nil then
+        self.maxfuel = data.maxfuel
+        self:InitializeFuelLevel(math.max(0, data.currentfuel))
+    end
+end
+
+-- Update stackable component to allow stacking items with finite uses and fueled items
 local _src_pos = nil
 local stackable = GLOBAL.require("components/stackable")
 stackable.Put = function(self, item, source_pos)
@@ -178,6 +221,9 @@ stackable.Put = function(self, item, source_pos)
         local oldsize = self.stacksize
         local newsize = math.min(self.maxsize, newtotal)
         local numberadded = newsize - oldsize
+        if self.inst.components.fueled ~= nil then
+            self.inst.components.fueled:Dilute(item.components.fueled.currentfuel, item.components.fueled.maxfuel)
+        end
         if self.inst.components.finiteuses ~= nil then
             self.inst.components.finiteuses:Dilute(item.components.finiteuses.current, item.components.finiteuses.total)
         end
@@ -209,14 +255,6 @@ stackable.Put = function(self, item, source_pos)
     end
     return ret
 end
-finiteuses.SplitUses = function(self, uses_removed)
-    if self.inst.components.stackable then
-        print("SplitUses: self.inst.components.finiteuses.current = "..self.inst.components.finiteuses.current)
-        self.inst.components.finiteuses.total = self.inst.components.finiteuses.total - uses_removed
-        self.inst.components.finiteuses.current = self.inst.components.finiteuses.current - uses_removed
-        self.inst:PushEvent("percentusedchange", {percent = self:GetPercent()})
-    end
-end
 stackable.Get = function(self, num)
     local num_to_get = num or 1
     if self.stacksize > num_to_get then
@@ -225,6 +263,11 @@ stackable.Get = function(self, num)
         instance.components.stackable:SetStackSize(num_to_get)
         if self.ondestack ~= nil then
             self.ondestack(instance)
+        end
+        if self.inst.components.fueled ~= nil then
+            instance.components.fueled.maxfuel = instance.components.fueled.maxfuel * num_to_get
+            instance.components.fueled.currentfuel = instance.components.fueled.currentfuel * num_to_get
+            self.inst.components.fueled:SplitFuel(instance.components.fueled.maxfuel)
         end
         if self.inst.components.finiteuses ~= nil then
             instance.components.finiteuses.total = instance.components.finiteuses.total * num_to_get
