@@ -1,7 +1,7 @@
 name = "Infinite Stacks"
 description = "Increase the stack size of all stackable items."
 author = "Tony"
-version = "240403"
+version = "240405"
 forumthread = ""
 api_version = 10
 all_clients_require_mod = true
@@ -33,6 +33,10 @@ local function addOption(cfg, desc, opt, def)
     return {name = cfg, label = desc, options = opt, default = def}
 end
 
+local function addDivider(name, title)
+    return {name = "cfg"..name.."Title", label = title, options = {{description = "", data = false},}, default = false}
+end
+
 local stacks = {} for k=1,20,1 do stacks[k] = setCount(k*5) end
     for k=1,18,1 do local m = k+20 stacks[m] = setCount(k*50+100) end
     stacks[#stacks] = {description = "Infinite", data = 65536}
@@ -42,6 +46,7 @@ local removeMurderlist = dontDieList
 local canStackList = {"Rabbits", "Birds", "Moles"}
 
 local options = {
+    addDivider("Stacks", "Stacks"),
     {name = "cfgChangeTinyStacksSize", label = "Tiny Items Stack", options = stacks, default = 950, hover = "Change the stack size of tiny items which normally stack to 60."},
     {name = "cfgChangeSmallStacksSize", label = "Small Items Stack", options = stacks, default = 950, hover = "Change the stack size of small items which normally stack to 40."},
     {name = "cfgChangeMediumStacksSize", label = "Medium Items Stack", options = stacks, default = 950, hover = "Change the stack size of medium items which normally stack to 20."},
@@ -49,10 +54,17 @@ local options = {
     {name = "cfgChangeMaxWortoxSouls", label = "Max Wortox Souls", options = stacks, default = 20, hover = "Change the maximum number of Souls that Wortox is allowed to pick up."}
 }
 
+options[#options+1] = addDivider("MakeStackable", "Make Stackable")
+options[#options+1] = canStack("Armor")
+options[#options+1] = canStack("Fueled")
+options[#options+1] = canStack("FiniteUses")
 for k=1, #canStackList, 1 do options[#options+1] = canStack(canStackList[k]) end
+options[#options+1] = addDivider("RemoveMurder", "Remove Murder Action")
 for k=1, #removeMurderlist, 1 do options[#options+1] = removeMurder(removeMurderlist[k]) end
+options[#options+1] = addDivider("RemoveFeed", "Remove Feeding")
 for k=1, #dontDieList, 1 do options[#options+1] = dontDie(dontDieList[k]) end
 
+options[#options+1] = addDivider("RemovePerish", "Remove Perishing")
 options[#options+1] = addOption("cfgJerkyDoesntPerish", "Jerky Doesn't Perish", toggle, false)
 options[#options+1] = addOption("cfgSeedsDontPerish", "Seeds Don't Perish", toggle, false)
 options[#options+1] = addOption("cfgVegSeedsDontPerish", "Veg. Seeds Don't Perish", toggle, true)

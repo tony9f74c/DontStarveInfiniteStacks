@@ -8,6 +8,10 @@ TUNING.STACK_SIZE_SMALLITEM = GetModConfigData("cfgChangeSmallStacksSize");
 TUNING.STACK_SIZE_TINYITEM = GetModConfigData("cfgChangeTinyStacksSize");
 TUNING.WORTOX_MAX_SOULS = GetModConfigData("cfgChangeMaxWortoxSouls");
 
+local stackArmor = GetModConfigData("cfgArmorCanStackToggle")
+local stackFueled = GetModConfigData("cfgFueledCanStackToggle")
+local stackFiniteUses = GetModConfigData("cfgFiniteUsesCanStackToggle")
+
 -- Make stackable
 local function makeStackable(inst)
     if not inst.components.stackable and GLOBAL.TheWorld.ismastersim then
@@ -137,212 +141,217 @@ if GetModConfigData("cfgVegSeedsDontPerish") then
     AddPrefabPostInit("asparagus_seeds", removePerish)
 end
 
--- Update finiteuses component to make all items with finite uses stackable
-local finiteuses = GLOBAL.require("components/finiteuses")
-local finiteuses_ctor = finiteuses._ctor
-finiteuses._ctor = function(self, inst)
-    finiteuses_ctor(self, inst)
-    self.inst:AddComponent("stackable")
-    self.inst.components.stackable.maxsize = TUNING.STACK_SIZE_LARGEITEM
-end
-
--- Update finiteuses component to allow stacking
-finiteuses.OnSave = function(self)
-    if self.current and self.total then
-        return { current = self.current, total = self.total }
+if stackFiniteUses == true then
+    -- Update finiteuses component to make all items with finite uses stackable
+    local finiteuses = GLOBAL.require("components/finiteuses")
+    local finiteuses_ctor = finiteuses._ctor
+    finiteuses._ctor = function(self, inst)
+        finiteuses_ctor(self, inst)
+        self.inst:AddComponent("stackable")
+        self.inst.components.stackable.maxsize = TUNING.STACK_SIZE_LARGEITEM
     end
-end
-finiteuses.OnLoad = function(self, data)
-    if data.current ~= nil and data.total ~= nil then
-        self:SetMaxUses(data.total)
-        self:SetUses(data.current)
+    -- Update finiteuses component to allow stacking
+    finiteuses.OnSave = function(self)
+        if self.current and self.total then
+            return { current = self.current, total = self.total }
+        end
     end
-end
-finiteuses.Dilute = function(self, current, total)
-    if self.inst.components.stackable then
-        self.inst.components.finiteuses.total = self.inst.components.finiteuses.total + total
-        self.inst.components.finiteuses.current = self.inst.components.finiteuses.current + current
-        self.inst:PushEvent("percentusedchange", {percent = self:GetPercent()})
+    finiteuses.OnLoad = function(self, data)
+        if data.current ~= nil and data.total ~= nil then
+            self:SetMaxUses(data.total)
+            self:SetUses(data.current)
+        end
     end
-end
-finiteuses.SplitUses = function(self, uses_removed)
-    if self.inst.components.stackable then
-        self.inst.components.finiteuses.total = self.inst.components.finiteuses.total - uses_removed
-        self.inst.components.finiteuses.current = self.inst.components.finiteuses.current - uses_removed
-        self.inst:PushEvent("percentusedchange", {percent = self:GetPercent()})
+    finiteuses.Dilute = function(self, current, total)
+        if self.inst.components.stackable then
+            self.inst.components.finiteuses.total = self.inst.components.finiteuses.total + total
+            self.inst.components.finiteuses.current = self.inst.components.finiteuses.current + current
+            self.inst:PushEvent("percentusedchange", {percent = self:GetPercent()})
+        end
     end
-end
-
--- Update fueled component to make all fueled items stackable
-local fueled = GLOBAL.require("components/fueled")
-local fueled_ctor = fueled._ctor
-fueled._ctor = function(self, inst)
-    fueled_ctor(self, inst)
-    self.inst:AddComponent("stackable")
-    self.inst.components.stackable.maxsize = TUNING.STACK_SIZE_LARGEITEM
-end
-
--- Update fueled component to allow stacking
-fueled.Dilute = function(self, currentfuel, maxfuel)
-    if self.inst.components.stackable then
-        self.inst.components.fueled.maxfuel = self.inst.components.fueled.maxfuel + maxfuel
-        self.inst.components.fueled.currentfuel = self.inst.components.fueled.currentfuel + currentfuel
-        self.inst:PushEvent("percentusedchange", {percent = self:GetPercent()})
-    end
-end
-fueled.SplitFuel = function(self, fuel_removed)
-    if self.inst.components.stackable then
-        self.inst.components.fueled.maxfuel = self.inst.components.fueled.maxfuel - fuel_removed
-        self.inst.components.fueled.currentfuel = self.inst.components.fueled.currentfuel - fuel_removed
-        self.inst:PushEvent("percentusedchange", {percent = self:GetPercent()})
-    end
-end
-fueled.OnSave = function(self)
-    if self.currentfuel and self.maxfuel then
-        return { currentfuel = self.currentfuel, maxfuel = self.maxfuel }
-    end
-end
-fueled.OnLoad = function(self, data)
-    if data.currentfuel ~= nil and data.maxfuel ~= nil then
-        self.maxfuel = data.maxfuel
-        self:InitializeFuelLevel(math.max(0, data.currentfuel))
+    finiteuses.SplitUses = function(self, uses_removed)
+        if self.inst.components.stackable then
+            self.inst.components.finiteuses.total = self.inst.components.finiteuses.total - uses_removed
+            self.inst.components.finiteuses.current = self.inst.components.finiteuses.current - uses_removed
+            self.inst:PushEvent("percentusedchange", {percent = self:GetPercent()})
+        end
     end
 end
 
--- Update armor component to make all armor stackable
-local armor = GLOBAL.require("components/armor")
-local armor_ctor = armor._ctor
-armor._ctor = function(self, inst)
-    armor_ctor(self, inst)
-    self.inst:AddComponent("stackable")
-    self.inst.components.stackable.maxsize = TUNING.STACK_SIZE_LARGEITEM
+if stackFueled == true then
+    -- Update fueled component to make all fueled items stackable
+    local fueled = GLOBAL.require("components/fueled")
+    local fueled_ctor = fueled._ctor
+    fueled._ctor = function(self, inst)
+        fueled_ctor(self, inst)
+        self.inst:AddComponent("stackable")
+        self.inst.components.stackable.maxsize = TUNING.STACK_SIZE_LARGEITEM
+    end
+    -- Update fueled component to allow stacking
+    fueled.Dilute = function(self, currentfuel, maxfuel)
+        if self.inst.components.stackable then
+            self.inst.components.fueled.maxfuel = self.inst.components.fueled.maxfuel + maxfuel
+            self.inst.components.fueled.currentfuel = self.inst.components.fueled.currentfuel + currentfuel
+            self.inst:PushEvent("percentusedchange", {percent = self:GetPercent()})
+        end
+    end
+    fueled.SplitFuel = function(self, fuel_removed)
+        if self.inst.components.stackable then
+            self.inst.components.fueled.maxfuel = self.inst.components.fueled.maxfuel - fuel_removed
+            self.inst.components.fueled.currentfuel = self.inst.components.fueled.currentfuel - fuel_removed
+            self.inst:PushEvent("percentusedchange", {percent = self:GetPercent()})
+        end
+    end
+    fueled.OnSave = function(self)
+        if self.currentfuel and self.maxfuel then
+            return { currentfuel = self.currentfuel, maxfuel = self.maxfuel }
+        end
+    end
+    fueled.OnLoad = function(self, data)
+        if data.currentfuel ~= nil and data.maxfuel ~= nil then
+            self.maxfuel = data.maxfuel
+            self:InitializeFuelLevel(math.max(0, data.currentfuel))
+        end
+    end
 end
 
--- Update armor component to allow stacking
-armor.Dilute = function(self, condition, maxcondition)
-    if self.inst.components.stackable then
-        self.inst.components.armor.maxcondition = self.inst.components.armor.maxcondition + maxcondition
-        self.inst.components.armor.condition = self.inst.components.armor.condition + condition
-        self.inst:PushEvent("percentusedchange", {percent = self:GetPercent()})
+if stackArmor == true then
+    -- Update armor component to make all armor stackable
+    local armor = GLOBAL.require("components/armor")
+    local armor_ctor = armor._ctor
+    armor._ctor = function(self, inst)
+        armor_ctor(self, inst)
+        self.inst:AddComponent("stackable")
+        self.inst.components.stackable.maxsize = TUNING.STACK_SIZE_LARGEITEM
     end
-end
-armor.SplitFuel = function(self, fuel_removed)
-    if self.inst.components.stackable then
-        self.inst.components.armor.maxcondition = self.inst.components.armor.maxcondition - fuel_removed
-        self.inst.components.armor.condition = self.inst.components.armor.condition - fuel_removed
-        self.inst:PushEvent("percentusedchange", {percent = self:GetPercent()})
+    -- Update armor component to allow stacking
+    armor.Dilute = function(self, condition, maxcondition)
+        if self.inst.components.stackable then
+            self.inst.components.armor.maxcondition = self.inst.components.armor.maxcondition + maxcondition
+            self.inst.components.armor.condition = self.inst.components.armor.condition + condition
+            self.inst:PushEvent("percentusedchange", {percent = self:GetPercent()})
+        end
     end
-end
-armor.OnSave = function(self)
-    if self.condition and self.maxcondition then
-        return { condition = self.condition, maxcondition = self.maxcondition }
+    armor.SplitFuel = function(self, fuel_removed)
+        if self.inst.components.stackable then
+            self.inst.components.armor.maxcondition = self.inst.components.armor.maxcondition - fuel_removed
+            self.inst.components.armor.condition = self.inst.components.armor.condition - fuel_removed
+            self.inst:PushEvent("percentusedchange", {percent = self:GetPercent()})
+        end
     end
-end
-armor.OnLoad = function(self, data)
-    if data.condition ~= nil and data.maxcondition ~= nil then
-        self.maxcondition = data.maxcondition
-        self:SetCondition(data.condition)
+    armor.OnSave = function(self)
+        if self.condition and self.maxcondition then
+            return { condition = self.condition, maxcondition = self.maxcondition }
+        end
+    end
+    armor.OnLoad = function(self, data)
+        if data.condition ~= nil and data.maxcondition ~= nil then
+            self.maxcondition = data.maxcondition
+            self:SetCondition(data.condition)
+        end
     end
 end
 
--- Update stackable component to allow stacking of armor, items with finite uses and fueled items
-local _src_pos = nil
-local stackable = GLOBAL.require("components/stackable")
-stackable.Put = function(self, item, source_pos)
-    GLOBAL.assert(item ~= self, "cant stack on self" )
-    local ret
-    if item.prefab == self.inst.prefab and item.skinname == self.inst.skinname then
-        local num_to_add = item.components.stackable.stacksize
-        local newtotal = self.stacksize + num_to_add
-        local oldsize = self.stacksize
-        local newsize = math.min(self.maxsize, newtotal)
-        local numberadded = newsize - oldsize
-        if self.inst.components.armor ~= nil then
-            self.inst.components.armor:Dilute(item.components.armor.condition, item.components.armor.maxcondition)
-        end
-        if self.inst.components.fueled ~= nil then
-            self.inst.components.fueled:Dilute(item.components.fueled.currentfuel, item.components.fueled.maxfuel)
-        end
-        if self.inst.components.finiteuses ~= nil then
-            self.inst.components.finiteuses:Dilute(item.components.finiteuses.current, item.components.finiteuses.total)
-        end
-        if self.inst.components.perishable ~= nil then
-            self.inst.components.perishable:Dilute(numberadded, item.components.perishable.perishremainingtime)
-        end
-        if self.inst.components.inventoryitem ~= nil then
-            self.inst.components.inventoryitem:DiluteMoisture(item, numberadded)
-        end
-        if self.inst.components.edible ~= nil then
-            self.inst.components.edible:DiluteChill(item, numberadded)
-        end
-        if self.inst.components.curseditem ~= nil then
-            self.inst.skipspeech = true
-        end
-        if self.maxsize >= newtotal then
-            item:Remove()
-        else
+if stackArmor == true or stackFueled == true or stackFiniteUses == true then
+    -- Update stackable component to allow stacking of armor, items with finite uses and fueled items
+    local _src_pos = nil
+    local stackable = GLOBAL.require("components/stackable")
+    stackable.Put = function(self, item, source_pos)
+        GLOBAL.assert(item ~= self, "cant stack on self" )
+        local ret
+        if item.prefab == self.inst.prefab and item.skinname == self.inst.skinname then
+            local num_to_add = item.components.stackable.stacksize
+            local newtotal = self.stacksize + num_to_add
+            local oldsize = self.stacksize
+            local newsize = math.min(self.maxsize, newtotal)
+            local numberadded = newsize - oldsize
+            if stackArmor == true and self.inst.components.armor ~= nil then
+                self.inst.components.armor:Dilute(item.components.armor.condition, item.components.armor.maxcondition)
+            end
+            if stackFueled == true and self.inst.components.fueled ~= nil then
+                self.inst.components.fueled:Dilute(item.components.fueled.currentfuel, item.components.fueled.maxfuel)
+            end
+            if stackFiniteUses == true and self.inst.components.finiteuses ~= nil then
+                self.inst.components.finiteuses:Dilute(item.components.finiteuses.current, item.components.finiteuses.total)
+            end
+            if self.inst.components.perishable ~= nil then
+                self.inst.components.perishable:Dilute(numberadded, item.components.perishable.perishremainingtime)
+            end
+            if self.inst.components.inventoryitem ~= nil then
+                self.inst.components.inventoryitem:DiluteMoisture(item, numberadded)
+            end
+            if self.inst.components.edible ~= nil then
+                self.inst.components.edible:DiluteChill(item, numberadded)
+            end
+            if self.inst.components.curseditem ~= nil then
+                self.inst.skipspeech = true
+            end
+            if self.maxsize >= newtotal then
+                item:Remove()
+            else
+                _src_pos = source_pos
+                item.components.stackable.stacksize = newtotal - self.maxsize
+                _src_pos = nil
+                item:PushEvent("stacksizechange", {stacksize = item.components.stackable.stacksize, oldstacksize=num_to_add, src_pos = source_pos })
+                ret = item
+            end
             _src_pos = source_pos
-            item.components.stackable.stacksize = newtotal - self.maxsize
+            self.stacksize = math.min(newsize, 65536)
             _src_pos = nil
-            item:PushEvent("stacksizechange", {stacksize = item.components.stackable.stacksize, oldstacksize=num_to_add, src_pos = source_pos })
-            ret = item
+            self.inst:PushEvent("stacksizechange", {stacksize = self.stacksize, oldstacksize=oldsize, src_pos = source_pos})
         end
-        _src_pos = source_pos
-        self.stacksize = math.min(newsize, 65536)
-        _src_pos = nil
-        self.inst:PushEvent("stacksizechange", {stacksize = self.stacksize, oldstacksize=oldsize, src_pos = source_pos})
+        return ret
     end
-    return ret
-end
-stackable.Get = function(self, num)
-    local num_to_get = num or 1
-    if self.stacksize > num_to_get then
-        local instance = GLOBAL.SpawnPrefab( self.inst.prefab, self.inst.skinname, self.inst.skin_id, nil )
-        self:SetStackSize(self.stacksize - num_to_get)
-        instance.components.stackable:SetStackSize(num_to_get)
-        if self.ondestack ~= nil then
-            self.ondestack(instance)
-        end
-        if self.inst.components.armor ~= nil then
-            instance.components.armor.maxcondition = instance.components.armor.maxcondition * num_to_get
-            instance.components.armor.condition = instance.components.armor.condition * num_to_get
-            self.inst.components.armor:SplitFuel(instance.components.armor.maxcondition)
-        end
-        if self.inst.components.fueled ~= nil then
-            instance.components.fueled.maxfuel = instance.components.fueled.maxfuel * num_to_get
-            instance.components.fueled.currentfuel = instance.components.fueled.currentfuel * num_to_get
-            self.inst.components.fueled:SplitFuel(instance.components.fueled.maxfuel)
-        end
-        if self.inst.components.finiteuses ~= nil then
-            instance.components.finiteuses.total = instance.components.finiteuses.total * num_to_get
-            instance.components.finiteuses.current = instance.components.finiteuses.current * num_to_get
-            self.inst.components.finiteuses:SplitUses(instance.components.finiteuses.total)
-        end
-        if instance.components.perishable ~= nil then
-            instance.components.perishable.perishremainingtime = self.inst.components.perishable.perishremainingtime
-        end
-        if instance.components.curseditem ~= nil and self.inst.components.curseditem ~= nil then
-            self.inst.components.curseditem:CopyCursedFields(instance.components.curseditem)
-            if self.inst:HasTag("applied_curse") then
-                instance.skipspeech = true
-                instance:AddTag("applied_curse")
+    stackable.Get = function(self, num)
+        local num_to_get = num or 1
+        if self.stacksize > num_to_get then
+            local instance = GLOBAL.SpawnPrefab( self.inst.prefab, self.inst.skinname, self.inst.skin_id, nil )
+            self:SetStackSize(self.stacksize - num_to_get)
+            instance.components.stackable:SetStackSize(num_to_get)
+            if self.ondestack ~= nil then
+                self.ondestack(instance)
             end
-        end
-        if instance.components.rechargeable ~= nil and self.inst.components.rechargeable ~= nil then
-            if not self.inst.components.rechargeable:IsCharged() then
-                instance.components.rechargeable:SetChargeTime(self.inst.components.rechargeable:GetChargeTime())
-                instance.components.rechargeable:SetCharge(self.inst.components.rechargeable:GetCharge())
+            if stackArmor == true and self.inst.components.armor ~= nil then
+                instance.components.armor.maxcondition = instance.components.armor.maxcondition * num_to_get
+                instance.components.armor.condition = instance.components.armor.condition * num_to_get
+                self.inst.components.armor:SplitFuel(instance.components.armor.maxcondition)
             end
-        end
-        if instance.components.inventoryitem ~= nil and self.inst.components.inventoryitem ~= nil then
-            if self.inst.components.inventoryitem.owner then
-                instance.components.inventoryitem:OnPutInInventory(self.inst.components.inventoryitem.owner)
+            if stackFueled == true and self.inst.components.fueled ~= nil then
+                instance.components.fueled.maxfuel = instance.components.fueled.maxfuel * num_to_get
+                instance.components.fueled.currentfuel = instance.components.fueled.currentfuel * num_to_get
+                self.inst.components.fueled:SplitFuel(instance.components.fueled.maxfuel)
             end
-            instance.components.inventoryitem:InheritMoisture(self.inst.components.inventoryitem:GetMoisture(), self.inst.components.inventoryitem:IsWet())
+            if stackFiniteUses == true and self.inst.components.finiteuses ~= nil then
+                instance.components.finiteuses.total = instance.components.finiteuses.total * num_to_get
+                instance.components.finiteuses.current = instance.components.finiteuses.current * num_to_get
+                self.inst.components.finiteuses:SplitUses(instance.components.finiteuses.total)
+            end
+            if instance.components.perishable ~= nil then
+                instance.components.perishable.perishremainingtime = self.inst.components.perishable.perishremainingtime
+            end
+            if instance.components.curseditem ~= nil and self.inst.components.curseditem ~= nil then
+                self.inst.components.curseditem:CopyCursedFields(instance.components.curseditem)
+                if self.inst:HasTag("applied_curse") then
+                    instance.skipspeech = true
+                    instance:AddTag("applied_curse")
+                end
+            end
+            if instance.components.rechargeable ~= nil and self.inst.components.rechargeable ~= nil then
+                if not self.inst.components.rechargeable:IsCharged() then
+                    instance.components.rechargeable:SetChargeTime(self.inst.components.rechargeable:GetChargeTime())
+                    instance.components.rechargeable:SetCharge(self.inst.components.rechargeable:GetCharge())
+                end
+            end
+            if instance.components.inventoryitem ~= nil and self.inst.components.inventoryitem ~= nil then
+                if self.inst.components.inventoryitem.owner then
+                    instance.components.inventoryitem:OnPutInInventory(self.inst.components.inventoryitem.owner)
+                end
+                instance.components.inventoryitem:InheritMoisture(self.inst.components.inventoryitem:GetMoisture(), self.inst.components.inventoryitem:IsWet())
+            end
+            return instance
         end
-        return instance
+        return self.inst
     end
-    return self.inst
 end
 
 -- Update stackable_replica component to allow stacking up to 65536
