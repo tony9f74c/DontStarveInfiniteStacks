@@ -137,7 +137,7 @@ if GetModConfigData("cfgVegSeedsDontPerish") then
     AddPrefabPostInit("asparagus_seeds", removePerish)
 end
 
--- Make armor/tools stackable
+-- Update finiteuses component to make all items with finite uses stackable to infinity
 local finiteuses = GLOBAL.require("components/finiteuses")
 local finiteuses_ctor = finiteuses._ctor
 finiteuses._ctor = function(self, inst)
@@ -145,6 +145,8 @@ finiteuses._ctor = function(self, inst)
     self.inst:AddComponent("stackable")
     self.inst.components.stackable.maxsize = TUNING.STACK_SIZE_SMALLITEM
 end
+
+-- Update finiteuses component to allow stacking
 finiteuses.OnSave = function(self)
     if self.current and self.total then
         return { current = self.current, total = self.total }
@@ -163,6 +165,8 @@ finiteuses.Dilute = function(self, current, total)
         self.inst:PushEvent("percentusedchange", {percent = self:GetPercent()})
     end
 end
+
+-- Update stackable component to allow stacking items with finite uses
 local _src_pos = nil
 local stackable = GLOBAL.require("components/stackable")
 stackable.Put = function(self, item, source_pos)
@@ -254,7 +258,7 @@ stackable.Get = function(self, num)
     return self.inst
 end
 
--- Update stackable_replica
+-- Update stackable_replica component to allow stacking up to 65536
 local function OnStackSizeDirty(inst)
     local self = inst.replica.stackable
     if not self then return end -- Stackable removed
@@ -295,7 +299,7 @@ stackable_replica.StackSize = function(self)
     return self:GetPreviewStackSize() or (self._stacksizeupper:value() * 256 + self._stacksize:value() + 1)
 end
 
--- Update itemtile
+-- Update itemtile widget to show full stack previews instead of 999+
 local Text = require "widgets/text"
 local itemtile = GLOBAL.require("widgets/itemtile")
 itemtile.SetQuantity = function(self, quantity)
