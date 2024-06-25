@@ -35,7 +35,7 @@
 
 # 如果你有任何建议，请在下方留言。
 
-# 如果你喜欢这个mod，请给个赞。[img]https://steamuserimages-a.akamaihd.net/ugc/943952182105285534/1B5A1441CFE91CDA692F6B6A85A8CA6AE9A4A1C7/[/img]
+# 如果你喜欢这个mod，请给个赞。
 
 # 享受吧！
 
