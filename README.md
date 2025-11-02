@@ -1,4 +1,5 @@
-[README中文](https://github.com/Miooowo/DontStarveInfiniteStacks/blob/main/RADEME_zh.md)
+[中文](https://github.com/Miooowo/DontStarveInfiniteStacks/blob/main/README_zh.md)
+
 # Infinite Stacks for Don't Starve Together
 
 <h1>Features</h1>
