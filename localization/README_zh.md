@@ -1,4 +1,4 @@
-[English](https://github.com/Miooowo/DontStarveInfiniteStacks/blob/main/README.md)
+[English](https://github.com/tony9f74c/DontStarveInfiniteStacks/blob/main/README.md)
 
 # 无限堆叠
 

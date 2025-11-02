@@ -1,4 +1,4 @@
-[中文](https://github.com/Miooowo/DontStarveInfiniteStacks/blob/main/README_zh.md)
+[中文](localization/README_zh.md)
 
 # Infinite Stacks for Don't Starve Together
 
@@ -37,3 +37,7 @@ Disable the option to murder animals and insects in the inventory.
 If set to infinite, items actually stack up to 65536, but that should be more than enough.
 
 Stacked animals are reduced to 1 if dropped on the ground. If you want to release them, do it 1 at a time.
+
+<h1>Credits</h1>
+
+Chinese translation provided by: [Miooowo](https://github.com/Miooowo)
