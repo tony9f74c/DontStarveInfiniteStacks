@@ -156,6 +156,9 @@ if GetModConfigData("cfgJerkyDoesntPerish") then
     AddPrefabPostInit("meat_dried", removePerish)
     AddPrefabPostInit("smallmeat_dried", removePerish)
     AddPrefabPostInit("monstermeat_dried", removePerish)
+    AddPrefabPostInit("fishmeat_dried", removePerish)
+    AddPrefabPostInit("fishmeat_small_dried", removePerish)
+    AddPrefabPostInit("kelp_dried", removePerish)
 end
 
 if GetModConfigData("cfgSeedsDontPerish") then
