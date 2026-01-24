@@ -81,7 +81,7 @@ local S = translation[lang_key] or translation.en
 name = S.name
 description = S.description
 author = "Tony"
-version = "260112"
+version = "260124"
 forumthread = ""
 api_version = 10
 all_clients_require_mod = true
@@ -124,6 +124,12 @@ local stacks = {} for k=1,20,1 do stacks[k] = setCount(k*5) end
     for k=1,18,1 do local m = k+20 stacks[m] = setCount(k*50+100) end
     stacks[#stacks] = {description = S.infinite, data = 65536}
 
+-- English names for config options (always used for internal naming)
+local dontDieListEn = translation.en.dontDieList
+local removeMurderListEn = translation.en.removeMurderList
+local canStackListEn = translation.en.canStackList
+
+-- Translated names for display labels
 local dontDieList = S.dontDieList
 local removeMurderlist = S.removeMurderList
 local canStackList = S.canStackList
@@ -138,11 +144,11 @@ local options = {
 }
 
 options[#options+1] = addDivider("MakeStackable", S.dividers.makeStackable)
-for k=1, #canStackList, 1 do options[#options+1] = canStack(canStackList[k]) end
+for k=1, #canStackListEn, 1 do options[#options+1] = canStack(canStackListEn[k]) end
 options[#options+1] = addDivider("RemoveMurder", S.dividers.removeMurder)
-for k=1, #removeMurderlist, 1 do options[#options+1] = removeMurder(removeMurderlist[k]) end
+for k=1, #removeMurderListEn, 1 do options[#options+1] = removeMurder(removeMurderListEn[k]) end
 options[#options+1] = addDivider("RemoveFeed", S.dividers.removeFeed)
-for k=1, #dontDieList, 1 do options[#options+1] = dontDie(dontDieList[k]) end
+for k=1, #dontDieListEn, 1 do options[#options+1] = dontDie(dontDieListEn[k]) end
 
 options[#options+1] = addDivider("RemovePerish", S.dividers.removePerish)
 options[#options+1] = addOption("cfgJerkyDoesntPerish", S.jerkyDoesntPerish, toggle, false)
