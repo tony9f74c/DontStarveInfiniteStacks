@@ -18,6 +18,7 @@ local translation = {
         smallItems = {label = "Small Items Stack", hover = "Change the stack size of small items which normally stack to 40."},
         mediumItems = {label = "Medium Items Stack", hover = "Change the stack size of medium items which normally stack to 20."},
         largeItems = {label = "Large Items Stack", hover = "Change the stack size of large items which normally stack to 10."},
+        pelletItems = {label = "Pellet Items Stack", hover = "Change the stack size of pellet items which normally stack to 950."},
         maxWortox = {label = "Max Wortox Souls", hover = "Change the maximum number of Souls that Wortox is allowed to pick up."},
         jerkyDoesntPerish = "Jerky Doesn't Perish",
         seedsDontPerish = "Seeds Don't Perish",
@@ -49,6 +50,7 @@ local translation = {
         smallItems = {label = "中型物品堆叠", hover = "更改默认堆叠数量为40的中物品的最大堆叠量。"},
         mediumItems = {label = "大型物品堆叠", hover = "更改默认堆叠数量为20的大型物品的最大堆叠量。"},
         largeItems = {label = "特大物品堆叠", hover = "更改默认堆叠数量为10的特大型物品的最大堆叠量。"},
+        pelletItems = {label = "颗粒物品堆叠", hover = "更改默认堆叠数量为950的颗粒物品的最大堆叠量。"},
         maxWortox = {label = "沃托克斯最大灵魂", hover = "更改允许沃托克斯拾取的灵魂数量上限。"},
         jerkyDoesntPerish = "肉干不腐",
         seedsDontPerish = "种子不腐",
@@ -81,7 +83,7 @@ local S = translation[lang_key] or translation.en
 name = S.name
 description = S.description
 author = "Tony"
-version = "260124"
+version = "260220"
 forumthread = ""
 api_version = 10
 all_clients_require_mod = true
@@ -140,6 +142,7 @@ local options = {
     {name = "cfgChangeSmallStacksSize", label = S.smallItems.label, options = stacks, default = 950, hover = S.smallItems.hover},
     {name = "cfgChangeMediumStacksSize", label = S.mediumItems.label, options = stacks, default = 950, hover = S.mediumItems.hover},
     {name = "cfgChangeLargeStacksSize", label = S.largeItems.label, options = stacks, default = 950, hover = S.largeItems.hover},
+    {name = "cfgChangePelletStacksSize", label = S.pelletItems.label, options = stacks, default = 950, hover = S.pelletItems.hover},
     {name = "cfgChangeMaxWortoxSouls", label = S.maxWortox.label, options = stacks, default = 20, hover = S.maxWortox.hover}
 }
 

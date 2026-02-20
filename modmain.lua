@@ -6,6 +6,7 @@ TUNING.STACK_SIZE_LARGEITEM = GetModConfigData("cfgChangeLargeStacksSize");
 TUNING.STACK_SIZE_MEDITEM = GetModConfigData("cfgChangeMediumStacksSize");
 TUNING.STACK_SIZE_SMALLITEM = GetModConfigData("cfgChangeSmallStacksSize");
 TUNING.STACK_SIZE_TINYITEM = GetModConfigData("cfgChangeTinyStacksSize");
+TUNING.STACK_SIZE_PELLET= GetModConfigData("cfgChangePelletStacksSize");
 TUNING.WORTOX_MAX_SOULS = GetModConfigData("cfgChangeMaxWortoxSouls");
 
 local stackArmor = GetModConfigData("cfgArmorCanStackToggle")
