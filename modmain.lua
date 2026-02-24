@@ -184,15 +184,7 @@ if GetModConfigData("cfgVegSeedsDontPerish") then
 end
 
 if stackFiniteUses == true then
-    -- Update finiteuses component to make all items with finite uses stackable
     local finiteuses = GLOBAL.require("components/finiteuses")
-    local finiteuses_ctor = finiteuses._ctor
-    finiteuses._ctor = function(self, inst)
-        finiteuses_ctor(self, inst)
-        self.inst:AddComponent("stackable")
-        self.inst.components.stackable.maxsize = TUNING.STACK_SIZE_LARGEITEM
-    end
-    -- Update finiteuses component to allow stacking
     finiteuses.OnSave = function(self)
         if self.current and self.total then
             return { current = self.current, total = self.total }
@@ -218,18 +210,20 @@ if stackFiniteUses == true then
             self.inst:PushEvent("percentusedchange", {percent = self:GetPercent()})
         end
     end
+    local function MakeFiniteUsesStackable(inst)
+        if inst.components.finiteuses then
+            if not inst.components.stackable then
+                inst:AddComponent("stackable")
+                inst.components.stackable.maxsize = TUNING.STACK_SIZE_LARGEITEM
+            end
+            inst.components.finiteuses.originalmaxuses = inst.components.finiteuses.total
+        end
+    end
+    AddPrefabPostInitAny(MakeFiniteUsesStackable)
 end
 
 if stackFueled == true then
-    -- Update fueled component to make all fueled items stackable
     local fueled = GLOBAL.require("components/fueled")
-    local fueled_ctor = fueled._ctor
-    fueled._ctor = function(self, inst)
-        fueled_ctor(self, inst)
-        self.inst:AddComponent("stackable")
-        self.inst.components.stackable.maxsize = TUNING.STACK_SIZE_LARGEITEM
-    end
-    -- Update fueled component to allow stacking
     fueled.Dilute = function(self, currentfuel, maxfuel)
         if self.inst.components.stackable then
             self.inst.components.fueled.maxfuel = self.inst.components.fueled.maxfuel + maxfuel
@@ -255,18 +249,20 @@ if stackFueled == true then
             self:InitializeFuelLevel(math.max(0, data.currentfuel))
         end
     end
+    local function MakeFueledStackable(inst)
+        if inst.components.fueled then
+            if not inst.components.stackable then
+                inst:AddComponent("stackable")
+                inst.components.stackable.maxsize = TUNING.STACK_SIZE_LARGEITEM
+            end
+            inst.components.fueled.originalmaxfuel = inst.components.fueled.maxfuel
+        end
+    end
+    AddPrefabPostInitAny(MakeFueledStackable)
 end
 
 if stackArmor == true then
-    -- Update armor component to make all armor stackable
     local armor = GLOBAL.require("components/armor")
-    local armor_ctor = armor._ctor
-    armor._ctor = function(self, inst)
-        armor_ctor(self, inst)
-        self.inst:AddComponent("stackable")
-        self.inst.components.stackable.maxsize = TUNING.STACK_SIZE_LARGEITEM
-    end
-    -- Update armor component to allow stacking
     armor.Dilute = function(self, condition, maxcondition)
         if self.inst.components.stackable then
             self.inst.components.armor.maxcondition = self.inst.components.armor.maxcondition + maxcondition
@@ -292,6 +288,16 @@ if stackArmor == true then
             self:SetCondition(data.condition)
         end
     end
+    local function MakeArmorStackable(inst)
+        if inst.components.armor then
+            if not inst.components.stackable then
+                inst:AddComponent("stackable")
+                inst.components.stackable.maxsize = TUNING.STACK_SIZE_LARGEITEM
+            end
+            inst.components.armor.originalmaxcondition = inst.components.armor.maxcondition
+        end
+    end
+    AddPrefabPostInitAny(MakeArmorStackable)
 end
 
 if stackArmor == true or stackFueled == true or stackFiniteUses == true then
@@ -339,6 +345,40 @@ if stackArmor == true or stackFueled == true or stackFiniteUses == true then
             end
             _src_pos = source_pos
             self.stacksize = math.min(newsize, 65536)
+            if stackArmor and self.inst.components.armor then
+                local current = self.inst.components.armor.condition
+                local base_max = self.inst.components.armor.originalmaxcondition
+                local new_stack = math.ceil(current / base_max)
+
+                if self.stacksize > new_stack then
+                    self.stacksize = new_stack
+                    self.inst.components.armor.maxcondition = base_max * self.stacksize
+                    local percent = current / (base_max * self.stacksize)
+                    self.inst:PushEvent("percentusedchange", {percent = percent})
+                end
+            end
+            if stackFueled and self.inst.components.fueled then
+                local current = self.inst.components.fueled.currentfuel
+                local base_max = self.inst.components.fueled.originalmaxfuel
+                local new_stack = math.ceil(current / base_max)
+                if self.stacksize > new_stack then
+                    self.stacksize = new_stack
+                    self.inst.components.fueled.maxfuel = base_max * self.stacksize
+                    local percent = current / (base_max * self.stacksize)
+                    self.inst:PushEvent("percentusedchange", {percent = percent})
+                end
+            end
+            if stackFiniteUses and self.inst.components.finiteuses then
+                local current = self.inst.components.finiteuses.current
+                local base_max = self.inst.components.finiteuses.originalmaxuses
+                local new_stack = math.ceil(current / base_max)
+                if self.stacksize > new_stack then
+                    self.stacksize = new_stack
+                    self.inst.components.finiteuses.total = base_max * self.stacksize
+                    local percent = current / (base_max * self.stacksize)
+                    self.inst:PushEvent("percentusedchange", {percent = percent})
+                end
+            end
             _src_pos = nil
             self.inst:PushEvent("stacksizechange", {stacksize = self.stacksize, oldstacksize=oldsize, src_pos = source_pos})
         end
@@ -354,19 +394,22 @@ if stackArmor == true or stackFueled == true or stackFiniteUses == true then
                 self.ondestack(instance)
             end
             if stackArmor == true and self.inst.components.armor ~= nil then
-                instance.components.armor.maxcondition = instance.components.armor.maxcondition * num_to_get
-                instance.components.armor.condition = instance.components.armor.condition * num_to_get
-                self.inst.components.armor:SplitFuel(instance.components.armor.maxcondition)
+                local new_condition = instance.components.armor.originalmaxcondition * num_to_get
+                instance.components.armor.maxcondition = new_condition
+                instance.components.armor.condition = new_condition
+                self.inst.components.armor:SplitFuel(new_condition)
             end
             if stackFueled == true and self.inst.components.fueled ~= nil then
-                instance.components.fueled.maxfuel = instance.components.fueled.maxfuel * num_to_get
-                instance.components.fueled.currentfuel = instance.components.fueled.currentfuel * num_to_get
-                self.inst.components.fueled:SplitFuel(instance.components.fueled.maxfuel)
+                local new_fuel = instance.components.fueled.originalmaxfuel * num_to_get
+                instance.components.fueled.maxfuel = new_fuel
+                instance.components.fueled.currentfuel = new_fuel
+                self.inst.components.fueled:SplitFuel(new_fuel)
             end
             if stackFiniteUses == true and self.inst.components.finiteuses ~= nil then
-                instance.components.finiteuses.total = instance.components.finiteuses.total * num_to_get
-                instance.components.finiteuses.current = instance.components.finiteuses.current * num_to_get
-                self.inst.components.finiteuses:SplitUses(instance.components.finiteuses.total)
+                local new_uses = instance.components.finiteuses.originalmaxuses * num_to_get
+                instance.components.finiteuses.total = new_uses
+                instance.components.finiteuses.current = new_uses
+                self.inst.components.finiteuses:SplitUses(new_uses)
             end
             if instance.components.perishable ~= nil then
                 instance.components.perishable.perishremainingtime = self.inst.components.perishable.perishremainingtime
